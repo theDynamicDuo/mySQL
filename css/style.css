@@ -1,0 +1,92 @@
+button {
+  transition: .5s background;
+}
+
+.jumbotron {
+  margin-top: 120px;
+}
+
+#login {
+  margin-top: 20px;
+  margin-bottom: 120px;
+}
+
+.list-group-item {
+  border-bottom: 5px solid rgba(160,160,160,1.0);
+}
+
+.navbar-brand {
+  background: #df691a;
+  z-index: 100;
+}
+
+.navbar-brand::after {
+  content: " !toDo";
+  z-index: -100;
+  animation-name: reveal;
+  animation-duration: 2s;
+  animation-timing-function: ease-in;
+}
+
+@keyframes reveal {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 100;
+  }
+}
+
+.list_item_unassigned select{
+  background-color: #D9534F;
+  color:white;
+}
+
+.list_item_assigned select{
+  background-color: #F0AD4E;
+  color:white;
+}
+
+.list_item_progress select{
+  background-color: #5BC0DE;
+  color:white;
+}
+
+.list_item_done select{
+  background-color: #5CB85C;
+  color:white;
+}
+
+.unassUL {
+  margin-bottom: 0px;
+  margin-top: 0px;
+}
+
+.assUL {
+  margin-bottom: 0px;
+  margin-top: 0px;
+}
+
+.progressUL {
+  margin-bottom: 0px;
+  margin-top: 0px;
+}
+
+.doneUL {
+  margin-bottom: 0px;
+  margin-top: 0px;
+}
+
+footer {
+  display: block;
+  margin-top: 50px;
+  height: 200px;
+  background: transparent;
+  bottom: 0;
+}
+
+footer img {
+  background: transparent;
+  margin: 0em 3em;
+  width: 15em;
+}
