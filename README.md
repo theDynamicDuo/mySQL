@@ -1,2 +1,2 @@
-# orchestratePractice
-We are learning how to use orchestrate
+# dynamicDuo
+We're Awesome-Sauce

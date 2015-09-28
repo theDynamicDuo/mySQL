@@ -1,0 +1,23 @@
+{
+  "name": "orchestratepractice",
+  "version": "1.0.0",
+  "description": "Building server with orchestrate",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jeff Dunn, Adam Taitano",
+  "license": "ISC",
+  "dependencies": {
+    "orchestrate": "^0.5.0"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/adamtaitano/dynamicDuo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/adamtaitano/dynamicDuo/issues"
+  },
+  "homepage": "https://github.com/adamtaitano/dynamicDuo#readme"
+}
