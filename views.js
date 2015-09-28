@@ -258,7 +258,7 @@ var UserView = Backbone.View.extend({
 		// });
 
 
-		this.listenTo(this.tasks,"change:status", this.addView);
+		this.listenTo(this.tasks,"change:status", this.addViewUpdate);
 		this.listenTo(this.tasks, "add", this.addView);
 	},
 	events:{
@@ -271,8 +271,11 @@ var UserView = Backbone.View.extend({
 		});
 		this.remove();
 	},
-	addView: function(Model){
+	addViewUpdate: function(Model){
 		Model.save();
+		var tasks = new TaskView({model:Model, user:this.model});
+	},
+	addView: function(Model){
 		var tasks = new TaskView({model:Model, user:this.model});
 	}
 
