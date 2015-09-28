@@ -9,7 +9,9 @@
   "author": "Jeff Dunn, Adam Taitano",
   "license": "ISC",
   "dependencies": {
-    "orchestrate": "^0.5.0"
+    "orchestrate": "^0.5.0",
+    "express": "~4.13.3",
+    "body-parser": "~1.14.1"
   },
   "devDependencies": {},
   "repository": {
