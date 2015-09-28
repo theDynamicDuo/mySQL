@@ -68,14 +68,14 @@ var TaskView = Backbone.View.extend({
 	changeStatus: function(){
 		var self = this;
 		var determineAss = function(){
-			console.log('determining blank or who');
+			// console.log('determining blank or who');
 			if(self.$("select[id='statusSelector']").val()==="Unassigned"){
 				return "";
 			} else {
 				return self.user.get('username');
 			}
 		};
-		 console.log("we determined blank or who");
+		//  console.log("we determined blank or who");
 
 	  this.model.set({
 			status: this.$("select[id='statusSelector']").val(),
@@ -100,13 +100,13 @@ var UnassignedTasksView = Backbone.View.extend({
 			this.user = opts.user;
 		}
 		this.render();
-		
+
 		var totalbar = new TotalTaskBar({
 			containerDiv: this.$el,
 			collection:this.collection,
 			model:this.model
 		});
-		
+
 		var self = this;
 		var unassigned = this.collection.where({status:"Unassigned"});
 		unassigned.forEach(function(element){
@@ -117,7 +117,7 @@ var UnassignedTasksView = Backbone.View.extend({
 
 	},
 	addView: function(model){
-		console.log("running addview in unassigned");
+		// console.log("running addview in unassigned");
 		var task = new TaskView({model:model,user:this.user});
 	}
 });
@@ -137,13 +137,13 @@ var UserTasksView = Backbone.View.extend({
 		$(this.$el).append($assignedUL);
 		$(this.$el).append($progressUL);
 		$(this.$el).append($doneUL);
-		
+
 		var taskbar = new MyTaskBar({
 			containerDiv: this.$el,
 			collection:this.collection,
 			model:this.model
 		});
-		
+
 	},
 	initialize: function(opts){
 		if(opts){this.containerDiv = opts.containerDiv;
@@ -153,7 +153,7 @@ var UserTasksView = Backbone.View.extend({
 		var assignee= this.collection.where({assignee:this.user.attributes.username});
 		var creator = this.collection.where({creator:this.user.attributes.username});
 		var usertasks = _.union(assignee, creator);
-		console.log("usertasks is: ", usertasks);
+		// console.log("usertasks is: ", usertasks);
 		usertasks.forEach(function(element){
 			var task = new TaskView({model:element,user:self.user});
 		});
@@ -167,9 +167,9 @@ var TotalTaskBar = Backbone.View.extend({
 	render: function(){
 		//progress bar stuff
 		var $unassBar = $('<div class="progress progress-striped active">');
-		console.log("unassbar: ", $unassBar);
+		// console.log("unassbar: ", $unassBar);
 		var x=0;
-		console.log("total tasks: ", app.tasks.length);
+		// console.log("total tasks: ", app.tasks.length);
 		var incompleteFind = this.collection.where({status:"Done"});
 		incompleteFind.forEach(function(){
 			x=x+1;
@@ -177,9 +177,9 @@ var TotalTaskBar = Backbone.View.extend({
 
 
 		var $unassPer = ((x)/app.tasks.length)*100;
-		console.log("tasks %: ",(app.tasks.length-x)/app.tasks.length);
+		// console.log("tasks %: ",(app.tasks.length-x)/app.tasks.length);
 		var $unassBarData = $('<div class="progress-bar" style="width: '+ $unassPer + '%">');
-		
+
 		$unassBar.append($unassBarData);
 		$(this.$el).append($unassBar);
 		this.containerDiv.append(this.$el);
@@ -196,16 +196,16 @@ var MyTaskBar = Backbone.View.extend({
 	render: function(){
 		//progress bar stuff
 		var $assBar = $('<div class="progress progress-striped active">');
-		console.log("assbar: ", $assBar);
+		// console.log("assbar: ", $assBar);
 		var y=0;
-		console.log("total tasks: ", app.tasks.length);
+		// console.log("total tasks: ", app.tasks.length);
 		var incompleteFind = this.collection.where({status:"Done"});
 		incompleteFind.forEach(function(){
 			y=y+1;
 		});
 
 		var $unassPer = ((y)/app.tasks.length)*100;
-		console.log("tasks %: ",(app.tasks.length-y)/app.tasks.length);
+		// console.log("tasks %: ",(app.tasks.length-y)/app.tasks.length);
 		var $assBarData = $('<div class="progress-bar" style="width: '+ $unassPer + '%">');
 
 		$assBar.append($assBarData);
@@ -250,7 +250,7 @@ var UserView = Backbone.View.extend({
 			model:this.model,
 			user:this.model
 		});
-		
+
 		// var taskbar = new MyTaskBar({
 		// 	containerDiv: this.$el,
 		// 	collection:this.tasks,
@@ -330,7 +330,7 @@ var LoginView = Backbone.View.extend({
 			}
 	},
 	refreshView: function(){
-		console.log("refreshView ran");
+		// console.log("refreshView ran");
 		this.remove();
 		var loginView = new LoginView({
 			tasks: this.tasks,
@@ -352,7 +352,7 @@ var NavView = Backbone.View.extend({
       href: "#",
       class:"navbar-brand"
     }).text("toDo ||");
-    console.log(this);
+    // console.log(this);
     //console.log(this.username);
 		//console.log(this.collection)
       var $ulNavbarRight = $('<ul class="nav navbar-nav navbar-right">');
@@ -367,7 +367,7 @@ var NavView = Backbone.View.extend({
     $container.append($ulNavbarRight);
     this.$el.append($container);
     $('body').prepend(this.$el);
-		console.log("======== NavView Rendered  ========");
+		// console.log("======== NavView Rendered  ========");
     return this;
   },
   initialize: function(opts){
@@ -443,7 +443,7 @@ var TaskCreateView = Backbone.View.extend({
     $modalDialog.append($modalContent);
     this.$el.append($modalDialog);
     $('body').append(this.$el);
-    console.log("======== TaskCreateView Rendered  ========");
+    // console.log("======== TaskCreateView Rendered  ========");
     return this;
   },
   initialize: function(opts){
@@ -456,10 +456,10 @@ var TaskCreateView = Backbone.View.extend({
     		"click #taskCreate": "taskCreate"
   },
 	taskCreate: function(){
-    console.log(" ++++ Task Create ++++ ");
+    // console.log(" ++++ Task Create ++++ ");
 		var createTaskTitle = $('input[id="createTaskTitle"]').val();
 		var createTaskDescription = $('textarea[id="createTaskDescription"]').val();
-		console.log("this collection is", this.collection);
+		// console.log("this collection is", this.collection);
 		var createTaskCreator = this.model.attributes.username;
 		var createTaskAssignee;
 		var createTaskStatus = $('select[id="createTaskStatusSelect"]').val();
@@ -481,7 +481,7 @@ var TaskCreateView = Backbone.View.extend({
 		//Modal closes ====> TBD
 		//Modal Form Elements clear
 		document.getElementById("createTaskForm").reset();
-		console.log(this.collection)
+		// console.log(this.collection)
   }
 });
 
