@@ -55,6 +55,21 @@ app.get('/tasks', function (req, res) {
   // });
   // res.send(tasksAndIDs);
 });
+// app.get('/unassignedTasks', function (req, res) {
+//   db.list('unassignedTasks')
+//   .then(function (result) {
+//     var data = result.body.results;
+//     var mapped = data.map(function (element, index) {
+//       return {id: element.path.key, title: element.value.title, description: element.value.description, creator: element.value.creator, assignee: element.value.assignee, status: element.value.status};
+//     });
+//     console.log(mapped);
+//     res.send(mapped);
+//   });
+  // var tasksAndIDs = tasks.map(function (element, index) {
+  //   return {id: index, title: element[0], description: element[1], creator: element[2], assignee: element[3], status: element[4]};
+  // });
+  // res.send(tasksAndIDs);
+// });
 
 // app.put('/users/:id', function (req, res) {
 //     var id = req.params.id;
