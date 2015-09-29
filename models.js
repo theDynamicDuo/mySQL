@@ -17,6 +17,7 @@ var UserModel = Backbone.Model.extend({
 // })();
 
 var TaskModel = Backbone.Model.extend({
+	urlRoot: '/unassignedTasks',
 	defaults: {
 		title: '',
 		description: '',
@@ -53,31 +54,7 @@ var UserCollection = Backbone.Collection.extend({
 	}
 });
 
-// var UserTaskCollection = Backbone.Collection.extend({
-// 	model: TaskModel,
-// 	url : "/userTasks",
-// 	initialize: function() {
-// 		this.fetch({ success: function(collection, response, options) {
-// 			console.log("task response is: ", response);
-// 		},
-// 								error: function(collection, response, options) {console.log("there was an error: ", response);}
-// 		});
-// 		// console.log("you made a new model");
-// 	}
-// });
-//
-// var UnassignedTaskCollection = Backbone.Collection.extend({
-// 	model: TaskModel,
-// 	url : "/unassignedTasks",
-// 	initialize: function() {
-// 		this.fetch({ success: function(collection, response, options) {
-// 			console.log("task response is: ", response);
-// 		},
-// 								error: function(collection, response, options) {console.log("there was an error: ", response);}
-// 		});
-// 		// console.log("you made a new model");
-// 	}
-// });
+
 var allModels = {};
 
 var SharedTaskModel = function(attrs) {
@@ -93,9 +70,23 @@ var SharedTaskModel = function(attrs) {
 	}
 };
 
-var TaskCollection = Backbone.Collection.extend({
+var UserTaskCollection = Backbone.Collection.extend({
 	model: SharedTaskModel,
-	url : "/tasks",
+	// url : "/userTasks/"+username,
+	initialize: function(opts) {
+		this.url = "/userTasks/"+opts.username;
+		this.fetch({ success: function(collection, response, options) {
+			console.log("task response is: ", response);
+		},
+								error: function(collection, response, options) {console.log("there was an error: ", response);}
+		});
+		// console.log("you made a new model");
+	}
+});
+
+var UnassignedTaskCollection = Backbone.Collection.extend({
+	model: SharedTaskModel,
+	url : "/unassignedTasks",
 	initialize: function() {
 		this.fetch({ success: function(collection, response, options) {
 			console.log("task response is: ", response);
@@ -105,3 +96,17 @@ var TaskCollection = Backbone.Collection.extend({
 		// console.log("you made a new model");
 	}
 });
+
+
+// var TaskCollection = Backbone.Collection.extend({
+// 	model: SharedTaskModel,
+// 	url : "/tasks/:",
+// 	initialize: function() {
+// 		this.fetch({ success: function(collection, response, options) {
+// 			console.log("task response is: ", response);
+// 		},
+// 								error: function(collection, response, options) {console.log("there was an error: ", response);}
+// 		});
+// 		// console.log("you made a new model");
+// 	}
+// });

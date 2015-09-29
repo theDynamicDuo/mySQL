@@ -28,7 +28,7 @@ app.get('/users', function (req, res) {
     var mapped = data.map(function (element, index) {
       return {id: element.path.key, username: element.value.username};
     });
-    console.log(mapped);
+    // console.log(mapped);
     res.send(mapped);
   });
 });
@@ -40,23 +40,20 @@ app.get('/users', function (req, res) {
   // });
   // console.log(mapped);
 
-app.get('/tasks', function (req, res) {
-  db.list('tasks')
+app.get('/userTasks/:username', function (req, res) {
+  var username = req.params.username;
+  db.search('tasks', 'value.assignee:'+ username +' OR value.creator:' +username) // OR value.creator: username'
   .then(function (result) {
-    var data = result.body.results;
-    var mapped = data.map(function (element, index) {
-      return {id: element.path.key, title: element.value.title, description: element.value.description, creator: element.value.creator, assignee: element.value.assignee, status: element.value.status};
-    });
-    console.log(mapped);
-    res.send(mapped);
-  });
-  // var tasksAndIDs = tasks.map(function (element, index) {
-  //   return {id: index, title: element[0], description: element[1], creator: element[2], assignee: element[3], status: element[4]};
-  // });
-  // res.send(tasksAndIDs);
-});
-// app.get('/unassignedTasks', function (req, res) {
-//   db.list('unassignedTasks')
+      var data = result.body.results;
+      // console.log("performed search for username and found :", data);
+      var mapped = data.map(function (element, index) {
+        return {id: element.path.key, title: element.value.title, description: element.value.description, creator: element.value.creator, assignee: element.value.assignee, status: element.value.status};
+      });
+         res.send(mapped);
+  })
+    .fail(function (err) {});
+ });
+//   db.list('tasks')
 //   .then(function (result) {
 //     var data = result.body.results;
 //     var mapped = data.map(function (element, index) {
@@ -65,6 +62,32 @@ app.get('/tasks', function (req, res) {
 //     console.log(mapped);
 //     res.send(mapped);
 //   });
+//   // var tasksAndIDs = tasks.map(function (element, index) {
+//   //   return {id: index, title: element[0], description: element[1], creator: element[2], assignee: element[3], status: element[4]};
+//   // });
+//   // res.send(tasksAndIDs);
+// });
+
+app.get('/unassignedTasks', function (req, res) {
+  db.search('tasks', 'value.status: "Unassigned"')
+  .then(function (result) {
+      var data = result.body.results;
+      var mapped = data.map(function (element, index) {
+        return {id: element.path.key, title: element.value.title, description: element.value.description, creator: element.value.creator, assignee: element.value.assignee, status: element.value.status};
+      });
+         res.send(mapped);
+  })
+    .fail(function (err) {});
+ });
+  // db.list('tasks')
+  // .then(function (result) {
+  //   var data = result.body.results;
+  //   var mapped = data.map(function (element, index) {
+  //     return {id: element.path.key, title: element.value.title, description: element.value.description, creator: element.value.creator, assignee: element.value.assignee, status: element.value.status};
+  //   });
+  //   console.log(mapped);
+  //   res.send(mapped);
+  // });
   // var tasksAndIDs = tasks.map(function (element, index) {
   //   return {id: index, title: element[0], description: element[1], creator: element[2], assignee: element[3], status: element[4]};
   // });
@@ -93,8 +116,37 @@ app.post('/users', function (req, res) {
     // var id = users.length;
     // users[id] = req.body.username;
 });
+//ORIGINAL
+// app.put('/tasks/:id', function (req, res) {
+//     var id = req.params.id;
+//     db.put('tasks', id, {"title" : req.body.title, "description" : req.body.description, "creator" : req.body.creator, "assignee" : req.body.assignee, "status": req.body.status})
+//       .then(function(result) {
+//         console.log("tasks update works");
+//         res.send({id: id});
+//     });
+//     // tasks[id] = [req.body.title, req.body.description, req.body.creator, req.body.assignee, req.body.status];
+//     // res.send({id: id});
+// });
+//
+// app.post('/tasks', function (req, res) {
+//     // var id = tasks.length;
+//     var id;
+//     db.list('tasks')
+//     .then(function(result) {
+//       id = result.body.count + 1;
+//       // console.log(id);
+//       db.put('tasks', id, {"title" : req.body.title, "description" : req.body.description, "creator" : req.body.creator, "assignee" : req.body.assignee, "status": req.body.status})
+//         .then(function(result) {
+//           console.log("tasks create works");
+//           res.send({id: id});
+//       });
+//     });
+//     // tasks[id] = [req.body.title, req.body.description, req.body.creator, req.body.assignee, req.body.status];
+//     // res.send({id: id});
+// });
 
-app.put('/tasks/:id', function (req, res) {
+app.put('/userTasks/:username', function (req, res) {
+  console.log("usertasks put request initiated");
     var id = req.params.id;
     db.put('tasks', id, {"title" : req.body.title, "description" : req.body.description, "creator" : req.body.creator, "assignee" : req.body.assignee, "status": req.body.status})
       .then(function(result) {
@@ -105,7 +157,36 @@ app.put('/tasks/:id', function (req, res) {
     // res.send({id: id});
 });
 
-app.post('/tasks', function (req, res) {
+app.post('/userTasks/:username', function (req, res) {
+    console.log("post route initiated");
+    // var id = tasks.length;
+    var id;
+    db.list('tasks')
+    .then(function(result) {
+      id = result.body.count + 1;
+      // console.log(id);
+      db.put('tasks', id, {"title" : req.body.title, "description" : req.body.description, "creator" : req.body.creator, "assignee" : req.body.assignee, "status": req.body.status})
+        .then(function(result) {
+          console.log("tasks create works");
+          res.send({id: id});
+      });
+    });
+    // tasks[id] = [req.body.title, req.body.description, req.body.creator, req.body.assignee, req.body.status];
+    // res.send({id: id});
+});
+app.put('/unassignedTasks/:id', function (req, res) {
+  console.log("unassigned task put initiated");
+    var id = req.params.id;
+    db.put('tasks', id, {"title" : req.body.title, "description" : req.body.description, "creator" : req.body.creator, "assignee" : req.body.assignee, "status": req.body.status})
+      .then(function(result) {
+        console.log("tasks update works");
+        res.send({id: id});
+    });
+    // tasks[id] = [req.body.title, req.body.description, req.body.creator, req.body.assignee, req.body.status];
+    // res.send({id: id});
+});
+
+app.post('/unassignedTasks', function (req, res) {
     // var id = tasks.length;
     var id;
     db.list('tasks')
@@ -147,7 +228,10 @@ app.post('/tasks', function (req, res) {
 //     });
 //     res.send(textsAndIDs);
 // });
-
+app.put("/tasks/:id", function(req,res){
+  var id = req.params.id;
+  res.send({id:id})
+});
 
 
 app.listen(3000, function () {
