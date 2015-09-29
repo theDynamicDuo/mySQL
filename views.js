@@ -39,7 +39,7 @@ var TaskView = Backbone.View.extend({
 		}
 ///////////////////
 		// console.log(this.model.attributes.status);
-
+// TODO: Clean up code so that it uses this.view to reference divs in userView; also note that we're appending to a class not an ID
 		if((this.model.get("assignee")===this.user.get('username')) || (this.model.get("creator")===this.user.get('username'))){
 			if(this.model.get("status")==="Unassigned"){
 				$('.unassUL').append(this.$el);
@@ -51,7 +51,7 @@ var TaskView = Backbone.View.extend({
 				$('.doneUL').append(this.$el);
 			}
 		}else if(this.model.get("status")==="Unassigned"){
-			$('#unassDiv').append(this.$el);
+			this.view.append(this.$el);
 		}
 
 
@@ -59,7 +59,9 @@ var TaskView = Backbone.View.extend({
 	initialize: function(opts){
 		if(opts){
 			this.user = opts.user;
+			this.view = opts.view;
 		}
+		this.listenTo(this.collection, "remove", this.removeView);
 		this.render();
 	},
 	events:{
@@ -82,6 +84,12 @@ var TaskView = Backbone.View.extend({
 			assignee: determineAss()
 		});
 		this.remove();
+	},
+	removeView: function(Model) {
+		console.log("The removed model is: ", Model);
+		if(Model === this.Model){
+		this.remove();
+	}
 	}
 });
 
@@ -108,18 +116,18 @@ var UnassignedTasksView = Backbone.View.extend({
 		});
 
 		var self = this;
-		var unassigned = this.collection.where({status:"Unassigned"});
-		unassigned.forEach(function(element){
-			var task = new TaskView({model:element,user:self.user});
+	//	var unassigned = this.collection.where({status:"Unassigned"});
+		this.collection.forEach(function(element){
+			var task = new TaskView({model:element,user:self.user,view:self.$el,collection:this.collection});
 		});
 	},
 	events:{
 
-	},
-	addView: function(model){
-		// console.log("running addview in unassigned");
-		var task = new TaskView({model:model,user:this.user});
-	}
+	} // TODO: check if this is necessary, not called upon
+	// addView: function(model){
+	// 	// console.log("running addview in unassigned");
+	// 	var task = new TaskView({model:model,user:this.user, collection: this.collection});
+	// }
 });
 
 var UserTasksView = Backbone.View.extend({
@@ -146,8 +154,10 @@ var UserTasksView = Backbone.View.extend({
 
 	},
 	initialize: function(opts){
-		if(opts){this.containerDiv = opts.containerDiv;
-			this.user=opts.user;}
+		if(opts){
+			this.containerDiv = opts.containerDiv;
+			this.user=opts.user;
+		}
 		this.render();
 		var self = this;
 		var assignee= this.collection.where({assignee:this.user.attributes.username});
@@ -155,70 +165,70 @@ var UserTasksView = Backbone.View.extend({
 		var usertasks = _.union(assignee, creator);
 		// console.log("usertasks is: ", usertasks);
 		usertasks.forEach(function(element){
-			var task = new TaskView({model:element,user:self.user});
+			var task = new TaskView({model:element,user:self.user, collection: this.collection});
 		});
 	},
 	events:{
 
 	}
 });
+//
+// var TotalTaskBar = Backbone.View.extend({
+// 	render: function(){
+// 		//progress bar stuff
+// 		var $unassBar = $('<div class="progress progress-striped active">');
+// 		// console.log("unassbar: ", $unassBar);
+// 		var x=0;
+// 		// console.log("total tasks: ", app.tasks.length);
+// 		var incompleteFind = this.collection.where({status:"Done"});
+// 		incompleteFind.forEach(function(){
+// 			x=x+1;
+// 		});
+//
+//
+// 		var $unassPer = ((x)/app.tasks.length)*100;
+// 		// console.log("tasks %: ",(app.tasks.length-x)/app.tasks.length);
+// 		var $unassBarData = $('<div class="progress-bar" style="width: '+ $unassPer + '%">');
+//
+// 		$unassBar.append($unassBarData);
+// 		$(this.$el).append($unassBar);
+// 		this.containerDiv.append(this.$el);
+// 	},
+// 	initialize: function(opts){
+// 		if(opts){this.containerDiv = opts.containerDiv;
+// 			this.user=opts.user;}
+// 		this.render();
+// 		var self = this;
+// 	}
+// });
 
-var TotalTaskBar = Backbone.View.extend({
-	render: function(){
-		//progress bar stuff
-		var $unassBar = $('<div class="progress progress-striped active">');
-		// console.log("unassbar: ", $unassBar);
-		var x=0;
-		// console.log("total tasks: ", app.tasks.length);
-		var incompleteFind = this.collection.where({status:"Done"});
-		incompleteFind.forEach(function(){
-			x=x+1;
-		});
-
-
-		var $unassPer = ((x)/app.tasks.length)*100;
-		// console.log("tasks %: ",(app.tasks.length-x)/app.tasks.length);
-		var $unassBarData = $('<div class="progress-bar" style="width: '+ $unassPer + '%">');
-
-		$unassBar.append($unassBarData);
-		$(this.$el).append($unassBar);
-		this.containerDiv.append(this.$el);
-	},
-	initialize: function(opts){
-		if(opts){this.containerDiv = opts.containerDiv;
-			this.user=opts.user;}
-		this.render();
-		var self = this;
-	}
-});
-
-var MyTaskBar = Backbone.View.extend({
-	render: function(){
-		//progress bar stuff
-		var $assBar = $('<div class="progress progress-striped active">');
-		// console.log("assbar: ", $assBar);
-		var y=0;
-		// console.log("total tasks: ", app.tasks.length);
-		var incompleteFind = this.collection.where({status:"Done"});
-		incompleteFind.forEach(function(){
-			y=y+1;
-		});
-
-		var $unassPer = ((y)/app.tasks.length)*100;
-		// console.log("tasks %: ",(app.tasks.length-y)/app.tasks.length);
-		var $assBarData = $('<div class="progress-bar" style="width: '+ $unassPer + '%">');
-
-		$assBar.append($assBarData);
-		$(this.$el).append($assBar);
-		$('#mytaskh3').append($(this.$el));
-	},
-	initialize: function(opts){
-		if(opts){this.containerDiv = opts.containerDiv;
-			this.user=opts.user;}
-		this.render();
-		var self = this;
-	}
-});
+// var MyTaskBar = Backbone.View.extend({
+// 	render: function(){
+// 		//progress bar stuff
+// 		var $assBar = $('<div class="progress progress-striped active">');
+// 		// console.log("assbar: ", $assBar);
+// 		var y=0;
+// 		// console.log("total tasks: ", app.tasks.length);
+// 		var incompleteFind = this.collection.where({status:"Done"});
+// 		incompleteFind.forEach(function(){
+// 			y=y+1;
+// 		});
+//
+// 		var $unassPer = ((y)/app.tasks.length)*100;
+// 		// console.log("tasks %: ",(app.tasks.length-y)/app.tasks.length);
+// 		var $assBarData = $('<div class="progress-bar" style="width: '+ $unassPer + '%">');
+//
+// 		$assBar.append($assBarData);
+// 		$(this.$el).append($assBar);
+// 		$('#mytaskh3').append($(this.$el));
+// 	},
+// 	initialize: function(opts){
+// 		if(opts){this.containerDiv = opts.containerDiv;
+// 			this.user=opts.user;}
+// 		this.render();
+// 		var self = this;
+// 	}
+// });
 
 var UserView = Backbone.View.extend({
 	render: function() {
@@ -230,23 +240,25 @@ var UserView = Backbone.View.extend({
 	},
 	initialize: function(opts) {
 		if(opts){this.appdiv=opts.appdiv;}
-		if(opts){this.tasks=opts.tasks;}
+		if(opts){this.userTasks=opts.userTasks;}
+		if(opts){this.unassignedTasks=opts.unassignedTasks;}
 
 		this.render();
 		var unass = new UnassignedTasksView({
 			model:this.model,
 			containerDiv: this.$el,
-			collection: this.tasks,
+			collection: this.unassignedTasks,
 			user: this.model
 		});
 		var user = new UserTasksView({
 			model:this.model,
 			containerDiv: this.$el,
-			collection: this.tasks,
+			collection: this.userTasks,
 			user: this.model
 		});
 		var taskCreate = new TaskCreateView({
-			collection: this.tasks,
+			userCollection: this.userTasks,
+			unassignedCollection: this.unassignedTasks,
 			model:this.model,
 			user:this.model
 		});
@@ -257,9 +269,10 @@ var UserView = Backbone.View.extend({
 		// 	model:this.model
 		// });
 
-
-		this.listenTo(this.tasks,"change:status", this.addViewUpdate);
-		this.listenTo(this.tasks, "add", this.addView);
+		this.listenTo(this.userTasks,"change:status", this.addViewUpdateUsers);
+		this.listenTo(this.unassignedTasks,"change:status", this.addViewUpdateUnassigned);
+		this.listenTo(this.userTasks, "add", this.addViewUsers);
+		this.listenTo(this.unassignedTasks, "add", this.addViewUnassigned);
 	},
 	events:{
 		"click #logout": "logout"
@@ -271,12 +284,32 @@ var UserView = Backbone.View.extend({
 		});
 		this.remove();
 	},
-	addViewUpdate: function(Model){
+	addViewUpdateUsers: function(Model){
 		Model.save();
-		var tasks = new TaskView({model:Model, user:this.model});
+		var tasks = new TaskView({model:Model, user:this.model, collection: this.userTasks});
 	},
-	addView: function(Model){
-		var tasks = new TaskView({model:Model, user:this.model});
+	addViewUpdateUnassigned: function(Model){
+		Model.save();
+		// TODO: determine whether we need to add or remove the model from unassigned tasks collection
+		//If you were not unassigned but you are now, then add model:
+		//
+		if(Model.previous("status") !== "Unassigned" && Model.get("status") === "Unassigned") {
+			this.unassignedTasks.add(Model);
+			// create a new corresponding view for the model:
+			var tasks = new TaskView({model:Model, user:this.model, view: $("#unassDiv"), collection: this.unassignedTasks});
+		}
+		//If you were unassigned and are now not, then remove model:
+		else if(Model.previous("status" === "Unassigned") && Model.get("status") !== "Unassigned") {
+			this.uanssignedTasks.remove(Model);
+		}
+
+		// var tasks = new TaskView({model:Model, user:this.model, collection: this.userTasks});
+	},
+	addViewUsers: function(Model){
+		var tasks = new TaskView({model:Model, user:this.model, collection: this.userTasks});
+	},
+	addViewUnassigned	: function(Model){
+		var tasks = new TaskView({model:Model, user:this.model, collection: this.unassignedTasks});
 	}
 
 });
@@ -307,7 +340,8 @@ var LoginView = Backbone.View.extend({
 	},
 	initialize: function(opts){
 		if(opts){this.appdiv=opts.appdiv;}
-		if(opts){this.tasks=opts.tasks;}
+		if(opts){this.userTasks=opts.userTasks;}
+		if(opts){this.unassignedTasks=opts.unassignedTasks;}
 		this.render();
 		this.listenTo(this.collection, "add", this.refreshView);
 	},
@@ -323,7 +357,8 @@ var LoginView = Backbone.View.extend({
 		var userView = new UserView({
 			model:this.collection.models[index],
 			appdiv:this.appdiv,
-			tasks: this.tasks
+			userTasks: this.userTasks,
+			unassignedTasks: this.unassignedTasks
 		});
 		this.remove();
 	},
@@ -336,7 +371,8 @@ var LoginView = Backbone.View.extend({
 		// console.log("refreshView ran");
 		this.remove();
 		var loginView = new LoginView({
-			tasks: this.tasks,
+			userTasks: this.userTasks,
+			unassignedTasks: this.unassignedTasks,
 			collection:this.collection,
 			appdiv: this.appdiv
 		});
@@ -451,7 +487,7 @@ var TaskCreateView = Backbone.View.extend({
   },
   initialize: function(opts){
 		if(opts){this.appdiv=opts.appdiv;}
-		if(opts){this.tasks=opts.tasks;}
+		if(opts){this.tasks=opts.userTasks;}
 		if(opts){this.user = opts.user;}
     this.render();
   },
@@ -474,13 +510,26 @@ var TaskCreateView = Backbone.View.extend({
 		}
 
 		//Collection is updated
-    this.collection.create({
-      title: createTaskTitle,
-      description: createTaskDescription,
-      creator: createTaskCreator,
-      assignee: createTaskAssignee,
-      status: createTaskStatus
-	  });
+    // this.collection.create({
+    //   title: createTaskTitle,
+    //   description: createTaskDescription,
+    //   creator: createTaskCreator,
+    //   assignee: createTaskAssignee,
+    //   status: createTaskStatus
+	  // });
+
+		var task = new TaskModel({
+			title: createTaskTitle,
+			description: createTaskDescription,
+			creator: createTaskCreator,
+			assignee: createTaskAssignee,
+			status: createTaskStatus
+		});
+		this.userCollection.add(task);
+		if (task.get('status') === "Unassigned") {
+			console.log("Adding task to unassignedTasks collection; task is: ", task);
+			this.unassignedCollection.add(task);
+		}
 		//Modal closes ====> TBD
 		//Modal Form Elements clear
 		document.getElementById("createTaskForm").reset();
@@ -491,9 +540,10 @@ var TaskCreateView = Backbone.View.extend({
 
 
 // generic ctor to represent interface:
-function GUI(users,tasks,el) {
+function GUI(users,tasks1, tasks2, sel) {
 	var loginView = new LoginView({
-		tasks: tasks,
+		userTasks: tasks1,
+		unassignedTasks: tasks2,
 		collection:users,
 		appdiv: $(el)
 	});

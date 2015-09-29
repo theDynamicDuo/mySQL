@@ -53,9 +53,22 @@ var UserCollection = Backbone.Collection.extend({
 	}
 });
 
-var TaskCollection = Backbone.Collection.extend({
+var UserTaskCollection = Backbone.Collection.extend({
 	model: TaskModel,
-	url : "/tasks",
+	url : "/userTasks",
+	initialize: function() {
+		this.fetch({ success: function(collection, response, options) {
+			console.log("task response is: ", response);
+		},
+								error: function(collection, response, options) {console.log("there was an error: ", response);}
+		});
+		// console.log("you made a new model");
+	}
+});
+
+var UnassignedTaskCollection = Backbone.Collection.extend({
+	model: TaskModel,
+	url : "/unassignedTasks",
 	initialize: function() {
 		this.fetch({ success: function(collection, response, options) {
 			console.log("task response is: ", response);
