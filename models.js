@@ -82,8 +82,9 @@ var UserTaskCollection = Backbone.Collection.extend({
 
 var UnassignedTaskCollection = Backbone.Collection.extend({
 	model: SharedTaskModel,
-	url : "/unassignedTasks",
-	initialize: function() {
+	// url : "/unassignedTasks",
+	initialize: function(opts) {
+		this.url = "/unassignedTasks/" + opts.username;
 		this.fetch({ success: function(collection, response, options) {
 			// console.log("task response is: ", response);
 		},

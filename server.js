@@ -50,16 +50,19 @@ app.get('/userTasks/:username', function (req, res) {
 //     res.send(mapped);
 //   });
 
-app.get('/unassignedTasks', function (req, res) {
-  db.search('tasks', 'value.status: "Unassigned"')
+app.get('/unassignedTasks/:username', function (req, res) {
+  console.log("/unassignedTasks/:username GET route initiated");
+  var username = req.params.username;
+  db.search('tasks', 'value.status: "Unassigned" AND value.creator: (NOT ' + username + ')')
   .then(function (result) {
+    console.log("db.search successful");
     var data = result.body.results;
     var mapped = data.map(function (element, index) {
       return {id: element.path.key, title: element.value.title, description: element.value.description, creator: element.value.creator, assignee: element.value.assignee, status: element.value.status};
     });
     res.send(mapped);
   })
-  .fail(function (err) {});
+  .fail(function (err) {console.log("db.search not successful");});
 });
 
   // db.list('tasks')
