@@ -19,7 +19,6 @@ var TaskView = Backbone.View.extend({
 
 		this.$el.append($title).append($desc).append($creator).append($assignee).append($statusSel);
 
-
 		//Assigned the correct deafult option for the dropdown
 		if(this.model.get("status")==="Unassigned"){
 			this.$el.addClass("list_item_unassigned");
@@ -37,9 +36,8 @@ var TaskView = Backbone.View.extend({
 			this.$el.addClass("list_item_done");
 			this.$(".done").attr("selected", "selected");
 		}
-///////////////////
-		// console.log(this.model.attributes.status);
-// TODO: Clean up code so that it uses this.view to reference divs in userView; also note that we're appending to a class not an ID
+
+		// TODO: Clean up code so that it uses this.view to reference divs in userView; also note that we're appending to a class not an ID
 		if((this.model.get("assignee")===this.user.get('username')) || (this.model.get("creator")===this.user.get('username'))){
 			if(this.model.get("status")==="Unassigned"){
 				$('.unassUL').append(this.$el);
@@ -51,17 +49,15 @@ var TaskView = Backbone.View.extend({
 				$('.doneUL').append(this.$el);
 			}
 		} else if(this.model.get("status")==="Unassigned"){ // changed back to else if
-			console.log("trying to append to this.view = ", this.view);
+			// console.log("trying to append to this.view = ", this.view);
 			this.view.append(this.$el);
 		}
-
-
 	},
 	initialize: function(opts){
 		if(opts){
 			this.user = opts.user;
 			this.view = opts.view;
-			console.log("this.view is: ", this.view);
+			// console.log("this.view is: ", this.view);
 		}
 		this.listenTo(this.collection, "remove", this.removeView);
 		this.render();
@@ -70,7 +66,7 @@ var TaskView = Backbone.View.extend({
 		"change select[id='statusSelector']": "changeStatus"
 	},
 	changeStatus: function(){
-		console.log("there is a change in status");
+		console.log("running changeStatus");
 		var self = this;
 		var determineAss = function(){
 			// console.log('determining blank or who');
@@ -80,19 +76,23 @@ var TaskView = Backbone.View.extend({
 				return self.user.get('username');
 			}
 		};
-		//  console.log("we determined blank or who");
 
+		console.log("Changing model's status and assignee");
 	  this.model.set({
 			status: this.$("select[id='statusSelector']").val(),
 			assignee: determineAss()
 		});
+
+		console.log("Removing view");
 		this.remove();
 	},
 	removeView: function(Model) {
-		console.log("The removed model is: ", Model);
+		console.log("running removeView");
 		if(Model === this.Model){
-		this.remove();
-	}
+			this.remove();
+		}
+		console.log("Removed task model from: ", this.collection);
+		console.log("Removed model: ", Model);
 	}
 });
 
@@ -101,7 +101,7 @@ var UnassignedTasksView = Backbone.View.extend({
 	className: "list-group",
 	render: function(){
 
-		this.$el.html('<h3>Unnassigned Tasks</h3>');
+		this.$el.html('<h3>Unassigned Tasks</h3>');
 		this.containerDiv.append(this.$el);
 		this.$el.attr("id","unassDiv");
 	},
@@ -119,14 +119,12 @@ var UnassignedTasksView = Backbone.View.extend({
 		// });
 		//
 		var self = this;
-	//	var unassigned = this.collection.where({status:"Unassigned"});
+		// var unassigned = this.collection.where({status:"Unassigned"});
 		this.collection.forEach(function(element){
 			var task = new TaskView({model:element,user:self.user,view:self.$el,collection:this.collection});
 		});
-	},
-	events:{
-
-	} // TODO: check if this is necessary, not called upon
+	}
+	// TODO: check if this is necessary, not called upon
 	// addView: function(model){
 	// 	// console.log("running addview in unassigned");
 	// 	var task = new TaskView({model:model,user:this.user, collection: this.collection});
@@ -154,7 +152,6 @@ var UserTasksView = Backbone.View.extend({
 		// 	collection:this.collection,
 		// 	model:this.model
 		// });
-
 	},
 	initialize: function(opts){
 		if(opts){
@@ -170,12 +167,9 @@ var UserTasksView = Backbone.View.extend({
 		usertasks.forEach(function(element){
 			var task = new TaskView({model:element, user:self.user, view:self.$el, collection: this.collection});
 		});
-	},
-	events:{
-
 	}
 });
-//
+
 // var TotalTaskBar = Backbone.View.extend({
 // 	render: function(){
 // 		//progress bar stuff
@@ -187,7 +181,6 @@ var UserTasksView = Backbone.View.extend({
 // 		incompleteFind.forEach(function(){
 // 			x=x+1;
 // 		});
-//
 //
 // 		var $unassPer = ((x)/app.userTasks.length)*100;
 // 		// console.log("tasks %: ",(app.tasks.length-x)/app.tasks.length);
@@ -246,7 +239,7 @@ var UserView = Backbone.View.extend({
 		if(opts){this.userTasks=opts.userTasks;}
 		if(opts){this.unassignedTasks=opts.unassignedTasks;}
 		if(opts){this.userTasks=opts.userTasks;}
-		console.log("userTasks is: ",this.userTasks);
+		// console.log("userTasks is: ",this.userTasks);
 
 		this.render();
 		var unass = new UnassignedTasksView({
@@ -283,47 +276,51 @@ var UserView = Backbone.View.extend({
 		"click #logout": "logout"
 	},
 	logout: function(){
-		var loginview= new LoginView({
+		var loginview = new LoginView({
 			collection: app.users,
 			appdiv: this.appdiv
 		});
 		this.remove();
 	},
 	addViewUpdateUsers: function(Model){
-		console.log("addViewUpdateUsers");
+		console.log("running addViewUpdateUsers...saving model changes and creating new task view for $('#assDiv')");
 		Model.save();
-		var tasks = new TaskView({model:Model, user:this.model, view:$("#assDiv"), collection: this.userTasks});
+		var task = new TaskView({model:Model, user:this.model, view:$("#assDiv"), collection: this.userTasks});
+		console.log("New task view: ", task);
 	},
 	addViewUpdateUnassigned: function(Model){
-		console.log("addViewUpdateUnassigned");
-		console.log(Model);
+		console.log("running addViewUpdateUnassigned...saving model changes");
 		Model.save();
-		//If you were not unassigned but you are now, then add model:
-		//
+		// If you were not unassigned but you are now, then add model:
+		console.log("Model.previous('status') is:" , Model.previous("status"));
+		console.log("Model.get('status') is:" , Model.get("status"));
 		if(Model.previous("status") !== "Unassigned" && Model.get("status") === "Unassigned") {
 			this.unassignedTasks.add(Model);
-			// create a new corresponding view for the model:
-			console.log("unassigneddiv is: ", $("#unassDiv"));
-			var tasks = new TaskView({model:Model, user:this.model, view: $("#unassDiv"), collection: this.unassignedTasks});
+			console.log("Added task model to unassignedTasks: ", Model);
+			// var task = new TaskView({model:Model, user:this.model, view: $("#unassDiv"), collection: this.unassignedTasks});
+			// console.log("New task view created: ", task);
 		}
-		//If you were unassigned and are now not, then remove model:
-		else if(Model.previous("status" === "Unassigned") && Model.get("status") !== "Unassigned") {
-			this.uanssignedTasks.remove(Model);
+		// If you were unassigned and are now not, then remove model:
+		else if(Model.previous("status") === "Unassigned" && Model.get("status") !== "Unassigned") {
+			this.unassignedTasks.remove(Model);
+			console.log("Removed task model from unassignedTasks: ", Model);
+			this.userTasks.add(Model);
+			console.log("Added task model to userTasks: ", Model);
+			// var task2 = new TaskView({model:Model, user:this.model, view: $("#assDiv"), collection: this.userTasks});
+			// console.log("New task view created: ", task2);
 		}
-
-		// var tasks = new TaskView({model:Model, user:this.model, collection: this.userTasks});
 	},
 	addViewUsers: function(Model){
-		console.log("running addViewUsers");
-		var tasks = new TaskView({model:Model, user:this.model, view:$("#assDiv") ,collection: this.userTasks});
+		console.log("running addViewUsers...creating new task view for $('#assDiv')");
+		var task = new TaskView({model:Model, user:this.model, view:$("#assDiv") ,collection: this.userTasks});
+		console.log("New task view: ", task);
 	},
 	addViewUnassigned	: function(Model){
-		console.log("running addViewUnassigned");
-		var tasks = new TaskView({model:Model, user:this.model, view:$("#unassDiv") ,collection: this.unassignedTasks});
+		console.log("running addViewUnassigned...creating new task view for $('#unassDiv')");
+		var task = new TaskView({model:Model, user:this.model, view:$("#unassDiv") ,collection: this.unassignedTasks});
+		console.log("New task view: ", task);
 	}
-
 });
-
 
 var LoginView = Backbone.View.extend({
 	render: function(){
@@ -375,9 +372,9 @@ var LoginView = Backbone.View.extend({
 		this.remove();
 	},
 	updateOnEnter: function(e){
-			if(e.keyCode == 13) {
-				this.collection.create({username:$('#regbox').val()});
-			}
+		if(e.keyCode == 13) {
+			this.collection.create({username:$('#regbox').val()});
+		}
 	},
 	refreshView: function(){
 		// console.log("refreshView ran");
@@ -431,7 +428,6 @@ var NavView = Backbone.View.extend({
     this.render();
   }
 });
-
 
 var TaskCreateView = Backbone.View.extend({
   tagName: "div",
@@ -519,7 +515,7 @@ var TaskCreateView = Backbone.View.extend({
 
 		if(createTaskStatus != "Unassigned"){
 			createTaskAssignee = this.model.attributes.username;
-		} else{
+		} else {
 			createTaskAssignee = "";
 		}
 
@@ -532,21 +528,33 @@ var TaskCreateView = Backbone.View.extend({
     //   status: createTaskStatus
 	  // });
 
-		var task = new TaskModel({
-			title: createTaskTitle,
-			description: createTaskDescription,
-			creator: createTaskCreator,
-			assignee: createTaskAssignee,
-			status: createTaskStatus
-		});
-		this.userCollection.create(task);
-		//
+		// var task = new TaskModel({
+		// 	title: createTaskTitle,
+		// 	description: createTaskDescription,
+		// 	creator: createTaskCreator,
+		// 	assignee: createTaskAssignee,
+		// 	status: createTaskStatus
+		// });
+
+		console.log("adding new model to userTasks");
+		// this.userCollection.create(task);
+
+		this.userCollection.create(
+			{
+				title: createTaskTitle,
+				description: createTaskDescription,
+				creator: createTaskCreator,
+				assignee: createTaskAssignee,
+				status: createTaskStatus
+			}
+		);
+
 		// if (task.get('status') === "Unassigned") {
 		// 	console.log("Adding task to unassignedTasks collection; task is: ", task);
 		// 	this.unassignedCollection.add(task);
-		// 	// this.unassignedCollection.save();
 		// }
 		// task.save();
+
 		//Modal closes ====> TBD
 		//Modal Form Elements clear
 		document.getElementById("createTaskForm").reset();
@@ -554,14 +562,12 @@ var TaskCreateView = Backbone.View.extend({
   }
 });
 
-
-
 // generic ctor to represent interface:
 function GUI(users, tasks2, sel) {
 	var loginView = new LoginView({
 		// userTasks: tasks1,
 		unassignedTasks: tasks2,
-		collection:users,
+		collection: users,
 		appdiv: $(sel)
 	});
 	var navView = new NavView({
