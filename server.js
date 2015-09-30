@@ -127,7 +127,7 @@ app.put('/tasks/:id', function (req, res) {
   });
 });
 
-app.post('/userTasks/:username', function (req, res) {
+app.post('/tasks', function (req, res) {   // was previously set to /userTasks/:username
   console.log("userTasks POST initiated");
   var id;
   db.list('tasks')
