@@ -291,25 +291,49 @@ app.post('/tasks', function (req, res) {   // was previously set to /userTasks/:
 
       queryResultsCreator = result;
 
-      client.query('select id from site_user where name = \'' + req.body.assignee + '\'', function(err, result) {
-        if(err) {
-          return console.error('error running query2 of get', err);
-        }
-        console.log("query2 result.rows: ", result.rows);
-
-        queryResultsAssignee = result;
-
-        client.query('insert into task (title, description, creator, assignee, status) values (\'' + req.body.title + '\', \'' + req.body.description + '\', \'' + queryResultsCreator.rows[0].id + '\', \'' + queryResultsAssignee.rows[0].id + '\', \'' + req.body.status + '\')', function(err, result) {
+      if(req.body.assignee !== '') {
+        client.query('select id from site_user where name = \'' + req.body.assignee + '\'', function(err, result) {
           if(err) {
-            return console.error('error running query3 of get', err);
+            return console.error('error running query2 of get', err);
           }
-          console.log("query3 result.rows: ", result.rows);
+          console.log("query2 result.rows: ", result.rows);
+
+          queryResultsAssignee = result;
+
+          client.query('insert into task (title, description, creator, assignee, status) values (\'' + req.body.title + '\', \'' + req.body.description + '\', \'' + queryResultsCreator.rows[0].id + '\', \'' + queryResultsAssignee.rows[0].id + '\', \'' + req.body.status + '\')', function(err, result) {
+            if(err) {
+              return console.error('error running query3 of get', err);
+            }
+            console.log("query3 result.rows: ", result.rows);
+
+            client.query('select max(id) from task', function(err, result) {
+              if(err) {
+                return console.error('error running query4 of get', err);
+              }
+              console.log("query4 result.rows: ", result.rows);
+
+              id = result.rows[0].max;
+              done();
+
+              res.send({id: id});
+            });
+          });
+        });
+      }
+      else {
+        client.query('insert into task (title, description, creator, assignee, status) values (\'' + req.body.title + '\', \'' + req.body.description + '\', \'' + queryResultsCreator.rows[0].id + '\', null, \'' + req.body.status + '\')', function(err, result) {
+          if(err) {
+            return console.error('error running query2 of get', err);
+          }
+          console.log("query2 result.rows: ", result.rows);
+
+          queryResultsAssignee = result;
 
           client.query('select max(id) from task', function(err, result) {
             if(err) {
-              return console.error('error running query4 of get', err);
+              return console.error('error running query3 of get', err);
             }
-            console.log("query4 result.rows: ", result.rows);
+            console.log("query3 result.rows: ", result.rows);
 
             id = result.rows[0].max;
             done();
@@ -317,7 +341,7 @@ app.post('/tasks', function (req, res) {   // was previously set to /userTasks/:
             res.send({id: id});
           });
         });
-      });
+      }
     });
   });
 });
