@@ -138,7 +138,6 @@ app.get('/userTasks/:username', function (req, res) {
 app.get('/unassignedTasks/:username', function (req, res) {
   console.log("/unassignedTasks/:username GET route initiated");
   var username = req.params.username;
-
   var id;
   var queryResults;
 
@@ -181,29 +180,98 @@ app.get('/unassignedTasks/:username', function (req, res) {
 
 app.post('/users', function (req, res) {
   var id;
-  db.list('users')
-  .then(function(result) {
-    id = result.body.count + 1;
-    // console.log(id);
-    db.put('users', id, {"username" : req.body.username})
-    .then(function(result) {
-      // console.log(req.body.username);
-      res.send({id: id});
+
+  pg.connect(conString, function(err, client, done) {
+    if(err) {
+      return console.error('error fetching client from pool', err);
+    }
+
+    client.query('insert into site_user (name) values (\'' + req.body.username + '\')', function(err, result) {
+      if(err) {
+        return console.error('error running query1 of get', err);
+      }
+      console.log("query1 result.rows: ", result.rows);
+
+      client.query('select max(id) from site_user', function(err, result) {
+        if(err) {
+          return console.error('error running query2 of get', err);
+        }
+        console.log("query2 result.rows: ", result.rows);
+
+        id = result.rows[0].max;
+        done();
+
+        res.send({id: id});
+      });
     });
   });
 });
-
+///****** PREVIOUS VERSION USING ORCHESTRATE ******///
+//   db.list('users')
+//   .then(function(result) {
+//     id = result.body.count + 1;
+//     // console.log(id);
+//     db.put('users', id, {"username" : req.body.username})
+//     .then(function(result) {
+//       // console.log(req.body.username);
+//       res.send({id: id});
+//     });
+//   });
+// });
 
 app.put('/tasks/:id', function (req, res) {
   console.log("userTasks PUT initiated");
   var id = req.params.id;
-  db.put('tasks', id, {"title" : req.body.title, "description" : req.body.description, "creator" : req.body.creator, "assignee" : req.body.assignee, "status": req.body.status})
-  .then(function(result) {
-    console.log("task update works");
-    res.send({id: id});
+  var queryResults;
+
+  pg.connect(conString, function(err, client, done) {
+    if(err) {
+      return console.error('error fetching client from pool', err);
+    }
+
+    if(req.body.assignee !== '') {
+      client.query('select id from site_user where name = \'' + req.body.assignee +'\'', function(err, result) {
+        if(err) {
+          return console.error('error running query1 of get', err);
+        }
+        console.log("query1 result.rows: ", result.rows);
+
+        queryResults = result;
+
+        client.query('update task set assignee = \'' + queryResults.rows[0].id + '\', status = \'' + req.body.status + '\' where id = \'' + id + '\'', function(err, result) {
+          if(err) {
+            return console.error('error running query2 of get', err);
+          }
+          console.log("query2 result.rows: ", result.rows);
+
+          done();
+
+          res.send({id: id});
+        });
+      });
+    }
+    else {
+      client.query('update task set assignee = null, status = \'' + req.body.status + '\' where id = \'' + id + '\'', function(err, result) {
+        if(err) {
+          return console.error('error running query1 of get', err);
+        }
+        console.log("query1 result.rows: ", result.rows);
+
+        done();
+
+        res.send({id: id});
+      });
+    }
   });
 });
+///****** PREVIOUS VERSION USING ORCHESTRATE ******///
+// db.put('tasks', id, {"title" : req.body.title, "description" : req.body.description, "creator" : req.body.creator, "assignee" : req.body.assignee, "status": req.body.status})
+// .then(function(result) {
+//   console.log("task update works");
+//   res.send({id: id});
+// });
 
+///****** PREVIOUS VERSION USING ORCHESTRATE ******///
 app.post('/tasks', function (req, res) {   // was previously set to /userTasks/:username
   console.log("userTasks POST initiated");
   var id;
@@ -218,29 +286,31 @@ app.post('/tasks', function (req, res) {   // was previously set to /userTasks/:
   });
 });
 
-app.put('/tasks/:id', function (req, res) {
-  console.log("unassignedTasks PUT initiated");
-  var id = req.params.id;
-  db.put('tasks', id, {"title" : req.body.title, "description" : req.body.description, "creator" : req.body.creator, "assignee" : req.body.assignee, "status": req.body.status})
-  .then(function(result) {
-    console.log("task update works");
-    res.send({id: id});
-  });
-});
+///****** PREVIOUS VERSION USING ORCHESTRATE ******/// /// BELIEVED TO BE REDUNDANT ///
+// app.put('/tasks/:id', function (req, res) {
+//   console.log("unassignedTasks PUT initiated");
+//   var id = req.params.id;
+//   db.put('tasks', id, {"title" : req.body.title, "description" : req.body.description, "creator" : req.body.creator, "assignee" : req.body.assignee, "status": req.body.status})
+//   .then(function(result) {
+//     console.log("task update works");
+//     res.send({id: id});
+//   });
+// });
 
-app.post('/unassignedTasks', function (req, res) {
-  console.log("unassignedTasks POST initiated");
-  var id;
-  db.list('tasks')
-  .then(function(result) {
-    id = result.body.count + 1;
-    db.put('tasks', id, {"title" : req.body.title, "description" : req.body.description, "creator" : req.body.creator, "assignee" : req.body.assignee, "status": req.body.status})
-    .then(function(result) {
-      console.log("task create works");
-      res.send({id: id});
-    });
-  });
-});
+///****** PREVIOUS VERSION USING ORCHESTRATE ******/// /// BELIEVED TO BE REDUNDANT ///
+// app.post('/unassignedTasks', function (req, res) {
+//   console.log("unassignedTasks POST initiated");
+//   var id;
+//   db.list('tasks')
+//   .then(function(result) {
+//     id = result.body.count + 1;
+//     db.put('tasks', id, {"title" : req.body.title, "description" : req.body.description, "creator" : req.body.creator, "assignee" : req.body.assignee, "status": req.body.status})
+//     .then(function(result) {
+//       console.log("task create works");
+//       res.send({id: id});
+//     });
+//   });
+// });
 
 app.listen(3000, function () {
   console.log("Server is running...........");
