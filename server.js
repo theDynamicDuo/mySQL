@@ -3,10 +3,11 @@ var express = require("express");
 var bodyParser = require("body-parser");
 // var db = require('orchestrate')(config.dbkey);
 var pg = require('pg');
-//or native libpq bindings
-//var pg = require('pg').native
-var title = "New Title"
+// or native libpq bindings
+// var pg = require('pg').native
+
 var app = express();
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(express.static(__dirname));
@@ -70,41 +71,67 @@ app.get('/users', function (req, res) {
 
 app.get('/userTasks/:username', function (req, res) {
   var username = req.params.username;
-  // console.log(username);
-  // var query = 'select id from site_user where name = \''+username+'\'';
-  // console.log(query);
   var id;
-  var name;
+  var queryResults;
+
   pg.connect(conString, function(err, client, done) {
     if(err) {
       return console.error('error fetching client from pool', err);
     }
-    // select id from site_user where name = username
-    client.query('select * from site_user where name = \''+username+'\'', function(err, result) {
-      done();
 
+    client.query('select * from site_user where name = \'' + username + '\'', function(err, result) {
       if(err) {
         return console.error('error running query1 of get', err);
       }
-      console.log(result.rows[0]);
-      name = result.rows[0].name;
-      id = result.rows[0].id;
-      console.log('the initial query found an id of: ',id);
-    client.query('select * from task where (creator ='+id+' or assignee ='+id+')', function(err, result) {
-      //call `done()` to release the client back to the pool
-      done();
+      console.log("query1 result.rows: ", result.rows);
 
-      if(err) {
-        return console.error('error running query2 of get', err);
-      }
-      // console.log(result.rows);
-      var data = result.rows;
-        var mapped = data.map(function (element, index) {
-          return {id: element.id, title: element.title, description: element.description, creator: element.creator, status: element.status};
+      id = result.rows[0].id;
+      console.log('the initial query found an id of: ', id);
+
+      client.query('select task.id, task.title, task.description, site_user.name as creator, task.assignee into tempTable from task left join site_user on task.creator = site_user.id'), function(err, result) {
+        if(err) {
+          return console.error('error running query2 of get', err);
+        }
+        console.log("query2 result.rows: ", result.rows);
+
+        client.query('select tempTable.id, tempTable.title, tempTable.description, tempTable.creator, site_user.name as assignee into tempTable2 from tempTable left join site_user on tempTable.assignee = site_user.id', function(err, result) {
+          if(err) {
+            return console.error('error running query3 of get', err);
+          }
+          console.log("query3 result.rows: ", result.rows);
+
+          client.query('drop table tempTable', function(err, result) {
+            if(err) {
+              return console.error('error running query4 of get', err);
+            }
+            console.log("query4 result.rows: ", result.rows);
+
+            client.query('select * from tempTable2 where (creator = \'' + username + '\' or assignee = \'' + username + '\')', function(err, result) {
+              if(err) {
+                return console.error('error running query5 of get', err);
+              }
+              console.log("query5 result.rows: ", result.rows);
+
+              queryResults = result.rows;
+
+              client.query('drop table tempTable2', function(err, result) {
+                if(err) {
+                  return console.error('error running query6 of get', err);
+                }
+                console.log("query6 result.rows: ", result.rows);
+
+                done();
+
+                var mapped = queryResults.map(function (element, index) {
+                  return {id: element.id, title: element.title, description: element.description, creator: element.creator, assignee: element.assignee, status: element.status};
+                });
+
+                console.log("mapped is: ", mapped);
+                res.send(mapped);
+              });
+            });
+          });
         });
-      console.log(mapped);
-      res.send(mapped);
-      //output: 1
       });
     });
   });
