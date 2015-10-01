@@ -72,7 +72,7 @@ var UserTaskCollection = Backbone.Collection.extend({
 	initialize: function(opts) {
 		this.url = "/userTasks/" + opts.username;
 		this.fetch({ success: function(collection, response, options) {
-			// console.log("task response is: ", response);
+			console.log("task response is: ", response);
 		},
 								error: function(collection, response, options) {console.log("there was an error: ", response);}
 		});
