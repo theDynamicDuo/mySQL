@@ -88,13 +88,13 @@ app.get('/userTasks/:username', function (req, res) {
       id = result.rows[0].id;
       console.log('the initial query found an id of: ', id);
 
-      client.query('select task.id, task.title, task.description, site_user.name as creator, task.assignee into tempTable from task left join site_user on task.creator = site_user.id'), function(err, result) {
+      client.query('select task.id, task.title, task.description, site_user.name as creator, task.assignee, task.status into tempTable from task left join site_user on task.creator = site_user.id', function(err, result) {
         if(err) {
           return console.error('error running query2 of get', err);
         }
         console.log("query2 result.rows: ", result.rows);
 
-        client.query('select tempTable.id, tempTable.title, tempTable.description, tempTable.creator, site_user.name as assignee into tempTable2 from tempTable left join site_user on tempTable.assignee = site_user.id', function(err, result) {
+        client.query('select tempTable.id, tempTable.title, tempTable.description, tempTable.creator, site_user.name as assignee, tempTable.status into tempTable2 from tempTable left join site_user on tempTable.assignee = site_user.id', function(err, result) {
           if(err) {
             return console.error('error running query3 of get', err);
           }
@@ -112,7 +112,8 @@ app.get('/userTasks/:username', function (req, res) {
               }
               console.log("query5 result.rows: ", result.rows);
 
-              queryResults = result.rows;
+              queryResults = result;
+              console.log("queryResults is: ", queryResults);
 
               client.query('drop table tempTable2', function(err, result) {
                 if(err) {
@@ -122,7 +123,7 @@ app.get('/userTasks/:username', function (req, res) {
 
                 done();
 
-                var mapped = queryResults.map(function (element, index) {
+                var mapped = queryResults.rows.map(function (element, index) {
                   return {id: element.id, title: element.title, description: element.description, creator: element.creator, assignee: element.assignee, status: element.status};
                 });
 
