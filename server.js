@@ -275,17 +275,52 @@ app.put('/tasks/:id', function (req, res) {
 app.post('/tasks', function (req, res) {   // was previously set to /userTasks/:username
   console.log("userTasks POST initiated");
   var id;
-  db.list('tasks')
-  .then(function(result) {
-    id = result.body.count + 1;
-    db.put('tasks', id, {"title" : req.body.title, "description" : req.body.description, "creator" : req.body.creator, "assignee" : req.body.assignee, "status": req.body.status})
-    .then(function(result) {
-      console.log("task create works");
-      res.send({id: id});
+  var queryResultsCreator;
+  var queryResultsAssignee;
+
+  pg.connect(conString, function(err, client, done) {
+    if(err) {
+      return console.error('error fetching client from pool', err);
+    }
+
+    client.query('select id from site_user where name = \'' + req.body.creator + '\'', function(err, result) {
+      if(err) {
+        return console.error('error running query1 of get', err);
+      }
+      console.log("query1 result.rows: ", result.rows);
+
+      queryResultsCreator = result;
+
+      client.query('select id from site_user where name = \'' + req.body.assignee + '\'', function(err, result) {
+        if(err) {
+          return console.error('error running query2 of get', err);
+        }
+        console.log("query2 result.rows: ", result.rows);
+
+        queryResultsAssignee = result;
+
+        client.query('insert into task (title, description, creator, assignee, status) values (\'' + req.body.title + '\', \'' + req.body.description + '\', \'' + queryResultsCreator.rows[0].id + '\', \'' + queryResultsAssignee.rows[0].id + '\', \'' + req.body.status + '\')', function(err, result) {
+          if(err) {
+            return console.error('error running query3 of get', err);
+          }
+          console.log("query3 result.rows: ", result.rows);
+
+          client.query('select max(id) from task', function(err, result) {
+            if(err) {
+              return console.error('error running query4 of get', err);
+            }
+            console.log("query4 result.rows: ", result.rows);
+
+            id = result.rows[0].max;
+            done();
+
+            res.send({id: id});
+          });
+        });
+      });
     });
   });
 });
-
 ///****** PREVIOUS VERSION USING ORCHESTRATE ******/// /// BELIEVED TO BE REDUNDANT ///
 // app.put('/tasks/:id', function (req, res) {
 //   console.log("unassignedTasks PUT initiated");
