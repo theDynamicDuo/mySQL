@@ -1,10 +1,7 @@
-var pgconfig = require('./config');
 var express = require("express");
 var bodyParser = require("body-parser");
-// var db = require('orchestrate')(config.dbkey);
+var pgconfig = require('./config');
 var pg = require('pg');
-// or native libpq bindings
-// var pg = require('pg').native
 
 var app = express();
 
@@ -29,33 +26,24 @@ var conString = process.env.ELEPHANTSQL_URL || "postgres://awdtqouh:" + pgconfig
 //   });
 // });
 
-//insert into site_user (name) values (‘insert_name_here’)
-//"update task set title = 'New Title', description = 'not stuff', creator= 5, assignee = 1, status = 'Assigned' where id = 4"
-
-
 app.get('/users', function (req, res) {
-  //this initializes a connection pool
-  //it will keep idle connections open for a (configurable) 30 seconds
-  //and set a limit of 20 (also configurable)
   pg.connect(conString, function(err, client, done) {
     if(err) {
       return console.error('error fetching client from pool', err);
     }
     client.query('select * from site_user', function(err, result) {
-      //call `done()` to release the client back to the pool
       done();
 
       if(err) {
         return console.error('error running query', err);
       }
-      // console.log(result.rows);
+
       var data = result.rows;
         var mapped = data.map(function (element, index) {
           return {id: element.id, username: element.name};
         });
 
       res.send(mapped);
-      //output: 1
     });
   });
 });
@@ -113,7 +101,6 @@ app.get('/userTasks/:username', function (req, res) {
               console.log("query5 result.rows: ", result.rows);
 
               queryResults = result;
-              console.log("queryResults is: ", queryResults);
 
               client.query('drop table tempTable2', function(err, result) {
                 if(err) {
@@ -147,7 +134,36 @@ app.get('/userTasks/:username', function (req, res) {
 //   res.send(mapped);
 // })
 // .fail(function (err) {});
-//
+
+app.get('/unassignedTasks/:username', function (req, res) {
+  console.log("/unassignedTasks/:username GET route initiated");
+  var username = req.params.username;
+
+  var id;
+  var queryResults;
+
+  pg.connect(conString, function(err, client, done) {
+    if(err) {
+      return console.error('error fetching client from pool', err);
+    }
+
+    client.query("select task.id, task.title, task.description, site_user.name as creator, '' as assignee, task.status from task left join site_user on task.creator = site_user.id where (task.status = 'Unassigned' and site_user.name <> \'" + username + "\')", function(err, result) {
+      if(err) {
+        return console.error('error running query1 of get', err);
+      }
+      console.log("query1 result.rows: ", result.rows);
+
+      queryResults = result;
+      done();
+
+      var mapped = queryResults.rows.map(function (element, index) {
+        return {id: element.id, title: element.title, description: element.description, creator: element.creator, assignee: element.assignee, status: element.status};
+      });
+      res.send(mapped);
+    });
+  });
+});
+///****** PREVIOUS VERSION USING ORCHESTRATE ******///
 // app.get('/unassignedTasks/:username', function (req, res) {
 //   console.log("/unassignedTasks/:username GET route initiated");
 //   var username = req.params.username;
@@ -162,7 +178,6 @@ app.get('/userTasks/:username', function (req, res) {
 //   })
 //   .fail(function (err) {console.log("db.search not successful");});
 // });
-
 
 app.post('/users', function (req, res) {
   var id;
