@@ -1,15 +1,21 @@
 var express = require("express");
 var bodyParser = require("body-parser");
-var pgconfig = require('./config');
+var config = require('./config');
 var pg = require('pg');
-
+var mysql = require('mysql');
 var app = express();
-
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(express.static(__dirname));
+// var connection = mysql.createConnection({
+//   host     : 'adamandjeff.cam975huvdwe.us-west-2.rds.amazonaws.com',
+//   user     : 'aandj',
+//   password : 'adamandjeff',
+//   database : 'mysqlpractice'
+// });
 
-var conString = process.env.ELEPHANTSQL_URL || "postgres://awdtqouh:" + pgconfig.pgkey + "@pellefant.db.elephantsql.com:5432/awdtqouh";
+
+// var conString = process.env.ELEPHANTSQL_URL || "postgres://awdtqouh:" + pgconfig.pgkey + "@pellefant.db.elephantsql.com:5432/awdtqouh";
 ///### INSTANCE WITH CONNECT AND END####///
 // var client = new pg.Client(conString);
 // client.connect(function(err) {
@@ -27,25 +33,28 @@ var conString = process.env.ELEPHANTSQL_URL || "postgres://awdtqouh:" + pgconfig
 // });
 
 app.get('/users', function (req, res) {
-  pg.connect(conString, function(err, client, done) {
-    if(err) {
-      return console.error('error fetching client from pool', err);
-    }
-    client.query('select * from site_user', function(err, result) {
-      done();
+//   connection.connect(function (err) {
+//   if (err) {
+//     console.error('error connecting: ' + err.stack);
+//     return;
+//   }
+// });
+var connection = mysql.createConnection(config);
 
-      if(err) {
-        return console.error('error running query', err);
-      }
+  connection.query('select * from site_user', function(err, rows, fields) {
+    if (err) throw err;
 
-      var data = result.rows;
-        var mapped = data.map(function (element, index) {
-          return {id: element.id, username: element.name};
-        });
+    console.log('The result is: ', rows);
+    var data = rows;
+    console.log(data);
+      var mapped = data.map(function (element, index) {
+        return {id: element.id, username: element.name};
+      });
 
-      res.send(mapped);
-    });
+    res.send(mapped);
   });
+
+  connection.end();
 });
 //****reference for orchestrate for app.get(/users)***//
 // db.list('users')
@@ -62,60 +71,59 @@ app.get('/userTasks/:username', function (req, res) {
   var id;
   var queryResults;
 
-  pg.connect(conString, function(err, client, done) {
-    if(err) {
-      return console.error('error fetching client from pool', err);
-    }
+  var connection = mysql.createConnection(config);
 
-    client.query('select * from site_user where name = \'' + username + '\'', function(err, result) {
+
+    connection.query('select * from site_user where name = \'' + username + '\'', function(err, result) {
       if(err) {
         return console.error('error running query1 of get', err);
       }
-      console.log("query1 result.rows: ", result.rows);
+      // console.log("query1 result.rows: ", result);
 
-      id = result.rows[0].id;
-      console.log('the initial query found an id of: ', id);
+      id = result[0].id;
+      // console.log('the initial query found an id of: ', id);
 
-      client.query('select task.id, task.title, task.description, site_user.name as creator, task.assignee, task.status into tempTable from task left join site_user on task.creator = site_user.id', function(err, result) {
-        if(err) {
-          return console.error('error running query2 of get', err);
-        }
-        console.log("query2 result.rows: ", result.rows);
-
-        client.query('select tempTable.id, tempTable.title, tempTable.description, tempTable.creator, site_user.name as assignee, tempTable.status into tempTable2 from tempTable left join site_user on tempTable.assignee = site_user.id', function(err, result) {
+        connection.query('create temporary table tempTable (select task.id, task.title, task.description, site_user.name as creator, task.assignee, task.status from task left join site_user on task.creator = site_user.id)', function(err, result) {
           if(err) {
             return console.error('error running query3 of get', err);
           }
-          console.log("query3 result.rows: ", result.rows);
+          // console.log("query2 result.rows: ", result);
 
-          client.query('drop table tempTable', function(err, result) {
+          connection.query('create temporary table tempTable2 (select tempTable.id, tempTable.title, tempTable.description, tempTable.creator, site_user.name as assignee, tempTable.status from tempTable left join site_user on tempTable.assignee = site_user.id)', function(err, result) {
             if(err) {
               return console.error('error running query4 of get', err);
             }
-            console.log("query4 result.rows: ", result.rows);
+            // console.log("query3 result.rows: ", result);
 
-            client.query('select * from tempTable2 where (creator = \'' + username + '\' or assignee = \'' + username + '\')', function(err, result) {
+            connection.query('drop temporary table tempTable', function(err, result) {
               if(err) {
                 return console.error('error running query5 of get', err);
               }
-              console.log("query5 result.rows: ", result.rows);
+              // console.log("query4 result.rows: ", result);
 
-              queryResults = result;
-
-              client.query('drop table tempTable2', function(err, result) {
+              connection.query('select * from tempTable2 where (creator = \'' + username + '\' or assignee = \'' + username + '\')', function(err, result) {
                 if(err) {
                   return console.error('error running query6 of get', err);
                 }
-                console.log("query6 result.rows: ", result.rows);
+                // console.log("query5 result.rows: ", result);
 
-                done();
+                queryResults = result;
 
-                var mapped = queryResults.rows.map(function (element, index) {
-                  return {id: element.id, title: element.title, description: element.description, creator: element.creator, assignee: element.assignee, status: element.status};
-                });
+                connection.query('drop table tempTable2', function(err, result) {
+                  if(err) {
+                    return console.error('error running query7 of get', err);
+                  }
+                  // console.log("query6 result.rows: ", result);
 
-                console.log("mapped is: ", mapped);
+                  // connection.end();
+
+                  var mapped = queryResults.map(function (element, index) {
+                    return {id: element.id, title: element.title, description: element.description, creator: element.creator, assignee: element.assignee, status: element.status};
+                  });
+
+                // console.log("mapped is: ", mapped);
                 res.send(mapped);
+                connection.end();
               });
             });
           });
@@ -123,7 +131,7 @@ app.get('/userTasks/:username', function (req, res) {
       });
     });
   });
-});
+// });
 //***REFERENCE TO ORCHESTRATE FOR APP.GET/userTasks*****//
 // db.search('tasks', 'value.assignee:'+ username +' OR value.creator:' +username)
 // .then(function (result) {
@@ -141,27 +149,26 @@ app.get('/unassignedTasks/:username', function (req, res) {
   var id;
   var queryResults;
 
-  pg.connect(conString, function(err, client, done) {
-    if(err) {
-      return console.error('error fetching client from pool', err);
-    }
+  var connection = mysql.createConnection(config);
 
-    client.query("select task.id, task.title, task.description, site_user.name as creator, '' as assignee, task.status from task left join site_user on task.creator = site_user.id where (task.status = 'Unassigned' and site_user.name <> \'" + username + "\')", function(err, result) {
+
+    connection.query("select task.id, task.title, task.description, site_user.name as creator, '' as assignee, task.status from task left join site_user on task.creator = site_user.id where (task.status = 'Unassigned' and site_user.name <> \'" + username + "\')", function(err, result) {
       if(err) {
         return console.error('error running query1 of get', err);
       }
-      console.log("query1 result.rows: ", result.rows);
+      console.log("query1 result.rows: ", result);
 
       queryResults = result;
-      done();
+      // done();
 
-      var mapped = queryResults.rows.map(function (element, index) {
+      var mapped = queryResults.map(function (element, index) {
         return {id: element.id, title: element.title, description: element.description, creator: element.creator, assignee: element.assignee, status: element.status};
       });
       res.send(mapped);
+      connection.end();
     });
   });
-});
+// });
 ///****** PREVIOUS VERSION USING ORCHESTRATE ******///
 // app.get('/unassignedTasks/:username', function (req, res) {
 //   console.log("/unassignedTasks/:username GET route initiated");
@@ -181,30 +188,27 @@ app.get('/unassignedTasks/:username', function (req, res) {
 app.post('/users', function (req, res) {
   var id;
 
-  pg.connect(conString, function(err, client, done) {
-    if(err) {
-      return console.error('error fetching client from pool', err);
-    }
+  var connection = mysql.createConnection(config);
 
-    client.query('insert into site_user (name) values (\'' + req.body.username + '\')', function(err, result) {
+    connection.query('insert into site_user (name) values (\'' + req.body.username + '\')', function(err, result) {
       if(err) {
         return console.error('error running query1 of get', err);
       }
-      console.log("query1 result.rows: ", result.rows);
+      console.log("query1 result.rows: ", result);
 
-      client.query('select max(id) from site_user', function(err, result) {
+      connection.query('select max(id) from site_user', function(err, result) {
         if(err) {
           return console.error('error running query2 of get', err);
         }
-        console.log("query2 result.rows: ", result.rows);
+        console.log("query2 result.rows: ", result);
 
-        id = result.rows[0].max;
-        done();
+        id = result[0].max;
+        // done();
 
         res.send({id: id});
+        connection.end();
       });
     });
-  });
 });
 ///****** PREVIOUS VERSION USING ORCHESTRATE ******///
 //   db.list('users')
@@ -224,45 +228,41 @@ app.put('/tasks/:id', function (req, res) {
   var id = req.params.id;
   var queryResults;
 
-  pg.connect(conString, function(err, client, done) {
-    if(err) {
-      return console.error('error fetching client from pool', err);
-    }
+  var connection = mysql.createConnection(config);
+
 
     if(req.body.assignee !== '') {
-      client.query('select id from site_user where name = \'' + req.body.assignee +'\'', function(err, result) {
+      connection.query('select id from site_user where name = \'' + req.body.assignee +'\'', function(err, result) {
         if(err) {
           return console.error('error running query1 of get', err);
         }
-        console.log("query1 result.rows: ", result.rows);
+        console.log("query1 result.rows: ", result);
 
         queryResults = result;
 
-        client.query('update task set assignee = \'' + queryResults.rows[0].id + '\', status = \'' + req.body.status + '\' where id = \'' + id + '\'', function(err, result) {
+        connection.query('update task set assignee = \'' + queryResults[0].id + '\', status = \'' + req.body.status + '\' where id = \'' + id + '\'', function(err, result) {
           if(err) {
             return console.error('error running query2 of get', err);
           }
-          console.log("query2 result.rows: ", result.rows);
+          console.log("query2 result.rows: ", result);
 
-          done();
-
+          connection.end();
           res.send({id: id});
         });
       });
     }
     else {
-      client.query('update task set assignee = null, status = \'' + req.body.status + '\' where id = \'' + id + '\'', function(err, result) {
+      connection.query('update task set assignee = null, status = \'' + req.body.status + '\' where id = \'' + id + '\'', function(err, result) {
         if(err) {
           return console.error('error running query1 of get', err);
         }
-        console.log("query1 result.rows: ", result.rows);
+        console.log("query1 result.rows: ", result);
 
-        done();
+        connection.end();
 
         res.send({id: id});
       });
     }
-  });
 });
 ///****** PREVIOUS VERSION USING ORCHESTRATE ******///
 // db.put('tasks', id, {"title" : req.body.title, "description" : req.body.description, "creator" : req.body.creator, "assignee" : req.body.assignee, "status": req.body.status})
@@ -278,42 +278,39 @@ app.post('/tasks', function (req, res) {   // was previously set to /userTasks/:
   var queryResultsCreator;
   var queryResultsAssignee;
 
-  pg.connect(conString, function(err, client, done) {
-    if(err) {
-      return console.error('error fetching client from pool', err);
-    }
+  var connection = mysql.createConnection(config);
 
-    client.query('select id from site_user where name = \'' + req.body.creator + '\'', function(err, result) {
+    connection.query('select id from site_user where name = \'' + req.body.creator + '\'', function(err, result) {
       if(err) {
         return console.error('error running query1 of get', err);
       }
-      console.log("query1 result.rows: ", result.rows);
+      console.log("query1 result.rows: ", result);
 
       queryResultsCreator = result;
 
       if(req.body.assignee !== '') {
-        client.query('select id from site_user where name = \'' + req.body.assignee + '\'', function(err, result) {
+        connection.query('select id from site_user where name = \'' + req.body.assignee + '\'', function(err, result) {
           if(err) {
             return console.error('error running query2 of get', err);
           }
-          console.log("query2 result.rows: ", result.rows);
+          console.log("query2 result.rows: ", result);
 
           queryResultsAssignee = result;
 
-          client.query('insert into task (title, description, creator, assignee, status) values (\'' + req.body.title + '\', \'' + req.body.description + '\', \'' + queryResultsCreator.rows[0].id + '\', \'' + queryResultsAssignee.rows[0].id + '\', \'' + req.body.status + '\')', function(err, result) {
+          connection.query('insert into task (title, description, creator, assignee, status) values (\'' + req.body.title + '\', \'' + req.body.description + '\', \'' + queryResultsCreator[0].id + '\', \'' + queryResultsAssignee[0].id + '\', \'' + req.body.status + '\')', function(err, result) {
             if(err) {
               return console.error('error running query3 of get', err);
             }
-            console.log("query3 result.rows: ", result.rows);
+            console.log("query3 result.rows: ", result);
 
-            client.query('select max(id) from task', function(err, result) {
+            connection.query('select max(id) from task', function(err, result) {
               if(err) {
                 return console.error('error running query4 of get', err);
               }
-              console.log("query4 result.rows: ", result.rows);
+              console.log("query4 result.rows: ", result);
 
-              id = result.rows[0].max;
-              done();
+              id = result[0].max;
+              connection.end();
 
               res.send({id: id});
             });
@@ -321,29 +318,28 @@ app.post('/tasks', function (req, res) {   // was previously set to /userTasks/:
         });
       }
       else {
-        client.query('insert into task (title, description, creator, assignee, status) values (\'' + req.body.title + '\', \'' + req.body.description + '\', \'' + queryResultsCreator.rows[0].id + '\', null, \'' + req.body.status + '\')', function(err, result) {
+        connection.query('insert into task (title, description, creator, assignee, status) values (\'' + req.body.title + '\', \'' + req.body.description + '\', \'' + queryResultsCreator[0].id + '\', null, \'' + req.body.status + '\')', function(err, result) {
           if(err) {
             return console.error('error running query2 of get', err);
           }
-          console.log("query2 result.rows: ", result.rows);
+          console.log("query2 result.rows: ", result);
 
           queryResultsAssignee = result;
 
-          client.query('select max(id) from task', function(err, result) {
+          connection.query('select max(id) from task', function(err, result) {
             if(err) {
               return console.error('error running query3 of get', err);
             }
-            console.log("query3 result.rows: ", result.rows);
+            console.log("query3 result.rows: ", result);
 
-            id = result.rows[0].max;
-            done();
+            id = result[0].max;
+            connection.end();
 
             res.send({id: id});
           });
         });
       }
     });
-  });
 });
 ///****** PREVIOUS VERSION USING ORCHESTRATE ******/// /// BELIEVED TO BE REDUNDANT ///
 // app.put('/tasks/:id', function (req, res) {
